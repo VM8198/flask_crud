@@ -92,12 +92,17 @@ def signup():
 		details = request.form
 		name = details['name']
 		password = details['password']
-		session['name'] = name 
-		pw_hash = bcrypt.generate_password_hash(password)
-		entry = user(name = name, password = pw_hash)
-		db.session.add(entry)
-		db.session.commit()
-		return jsonify({'message': 'successfully registered'})
+		cur = mysql.connection.cursor()
+		cur.execute("SELECT * FROM user WHERE name = %s",[name])
+		foundUser = cur.fetchall()
+		if foundUser:
+			return jsonify({"message": "user already exist"})
+		else:
+			pw_hash = bcrypt.generate_password_hash(password)
+			cur.execute("INSERT INTO user(name, password) VALUES (%s,%s)",[name,pw_hash])	
+			mysql.connection.commit()
+			cur.close()
+			return jsonify({'message': 'successfully registered'})
 
 @app.route('/login', methods = ['POST'])
 def login():
@@ -105,9 +110,11 @@ def login():
 		details = request.form
 		name = details['name']
 		password = details['password']
-		foundUser = user.query.filter_by(name = name).first()
+		cur = mysql.connection.cursor()
+		cur.execute("SELECT * FROM user WHERE name = %s",[name])
+		foundUser = cur.fetchone()
 		if foundUser:
-			pw_hash = bcrypt.check_password_hash(foundUser.password,password)
+			pw_hash = bcrypt.check_password_hash(foundUser[2],password)
 			if pw_hash:
 				return jsonify({'message': 'logged in successfully'})	
 			abort(401)	
@@ -148,9 +155,9 @@ def getUserById(uid):
 	return jsonify({"user": foundUser})
 
 
-@app.route('/delete/<string:userName>', methods = ["DELETE"])
+@app.route('/delete/<string:userName>', methods = ["POST"])
 def delete(userName):
-	if request.method == 'DELETE':
+	if request.method == 'POST	':
 		cur = mysql.connection.cursor()
 		cur.execute("DELETE FROM user WHERE name = %s",[userName])	
 		mysql.connection.commit()
