@@ -3,6 +3,8 @@ from flask import Flask
 from flask_mysqldb import MySQL
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
+from flask_jwt_extended import *
+
 
 app = Flask(__name__) #creating the Flask class object 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:@localhost/flask'
@@ -11,7 +13,8 @@ mysql = MySQL(app)
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
 app.secret_key = "helloFlask"  
-
+app.config['JWT_SECRET_KEY'] = 'jwt-secret-string'
+jwt = JWTManager(app)
 
 class user(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
@@ -116,7 +119,9 @@ def login():
 		if foundUser:
 			pw_hash = bcrypt.check_password_hash(foundUser[2],password)
 			if pw_hash:
-				return jsonify({'message': 'logged in successfully'})	
+				access_token = create_access_token(identity = name)
+				refresh_token = create_refresh_token(identity = name)
+				return jsonify({'message': 'logged in successfully','access_token': access_token})	
 			else:
 				return jsonify({"message": "wrong password"})
 				abort(401)
@@ -125,6 +130,7 @@ def login():
 
 
 @app.route('/add', methods = ['POST'])
+@jwt_required
 def add():
 	if request.method == 'POST':
 		details = request.form
@@ -137,6 +143,7 @@ def add():
 	return jsonify({"message": "record added"})
 
 @app.route('/getUserByName/<string:name>', methods = ['GET'])
+@jwt_required
 def getUserByName(name):
 	if request.method == 'GET':
 		details = request.form
@@ -148,6 +155,7 @@ def getUserByName(name):
 	return jsonify({"user": foundUser})
 
 @app.route('/getUserById/<int:uid>', methods = ['GET'])
+@jwt_required
 def getUserById(uid):
 	if request.method == 'GET':
 		details = request.form
@@ -160,6 +168,7 @@ def getUserById(uid):
 
 
 @app.route('/delete/<string:userName>', methods = ["POST"])
+@jwt_required
 def delete(userName):
 	if request.method == 'POST	':
 		cur = mysql.connection.cursor()
@@ -169,6 +178,7 @@ def delete(userName):
 	return jsonify({"message": "record deleted"})
 
 @app.route('/update/<int:userId>/<string:data>', methods = ['POST'])
+@jwt_required
 def update(userId,data):
 	if request.method == 'POST':
 		cur = mysql.connection.cursor()
