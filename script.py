@@ -117,7 +117,11 @@ def login():
 			pw_hash = bcrypt.check_password_hash(foundUser[2],password)
 			if pw_hash:
 				return jsonify({'message': 'logged in successfully'})	
-			abort(401)	
+			else:
+				return jsonify({"message": "wrong password"})
+				abort(401)
+		else:
+			return ({"message": "user not found"})	
 
 
 @app.route('/add', methods = ['POST'])
