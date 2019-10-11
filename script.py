@@ -86,7 +86,7 @@ def home():
 # 	cur.close()
 # 	return "Record Deleted"
 
-@app.route('/signup', methods = ['GET','POST'])
+@app.route('/signup', methods = ['POST'])
 def signup():
 	if request.method == 'POST':
 		details = request.form
@@ -99,7 +99,7 @@ def signup():
 		db.session.commit()
 		return jsonify({'message': 'successfully registered'})
 
-@app.route('/login', methods = ['GET','POST'])
+@app.route('/login', methods = ['POST'])
 def login():
 	if request.method == 'POST':
 		details = request.form
@@ -120,14 +120,37 @@ def add():
 		name = details['name']
 		password = details['password']
 		cur = mysql.connection.cursor()
-		cur.execute("INSERT INTO user(name, password) VALUES (%s,%s)",(name,password))
+		cur.execute("INSERT INTO user(name, password) VALUES (%s,%s)",[name,password])
 		mysql.connection.commit()
 		cur.close()		
 	return jsonify({"message": "record added"})
 
-@app.route('/delete/<string:userName>', methods = ['POST'])
+@app.route('/getUserByName/<string:name>', methods = ['GET'])
+def getUserByName(name):
+	if request.method == 'GET':
+		details = request.form
+		cur = mysql.connection.cursor()
+		cur.execute("SELECT * FROM user WHERE name = %s",[name])
+		foundUser = cur.fetchall()
+		mysql.connection.commit()
+		cur.close()
+	return jsonify({"user": foundUser})
+
+@app.route('/getUserById/<int:uid>', methods = ['GET'])
+def getUserById(uid):
+	if request.method == 'GET':
+		details = request.form
+		cur = mysql.connection.cursor()
+		cur.execute("SELECT * FROM user WHERE id = %s",[uid])
+		foundUser = cur.fetchall()
+		mysql.connection.commit()
+		cur.close()
+	return jsonify({"user": foundUser})
+
+
+@app.route('/delete/<string:userName>', methods = ["DELETE"])
 def delete(userName):
-	if request.method == 'POST':
+	if request.method == 'DELETE':
 		cur = mysql.connection.cursor()
 		cur.execute("DELETE FROM user WHERE name = %s",[userName])	
 		mysql.connection.commit()
