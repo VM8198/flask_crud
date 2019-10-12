@@ -32,62 +32,15 @@ app.config['MYSQL_DB'] = 'flask'
 def home():
 	return render_template('signup.html')
 
-# @app.route('/signup',methods = ['GET','POST'])
-# def signup():
-# 	if request.method == 'POST':
-# 		details = request.form
-# 		fname = details['fname']
-# 		lname = details['lname']
-# 		return render_template('login.html')
-
-# @app.route('/login',methods = ['GET','POST'])
-# def validate():
+# @app.route('/get',methods = ['GET','POST'])
+# def get():
 # 	if request.method == 'GET':
-		# details = request.form
-		# fname = details['fname']
-		# lname = details['lname']
-		# entry = user(firstName = fname, lastName = lname)
-		# getUser = user.query.filter_by(firstName = 'asdas').first()
-		# db.session.add(get)
-		# db.session.commit()
-		# cur = mysql.connection.cursor()
-		# cur.execute("INSERT INTO user(firstName, lastName) VALUES (%s, %s)", (fname, lname))
-		# cur.execute("SELECT * FROM user WHERE firstName = 'vivek'")
-		# row_headers = [ x[0] for x in cur.description]
-		# getUser = cur.fetchall()
-		# json_data = []
-		# for result in getUser:
-		# 	json_data.append(dict(zip(row_headers,result)))
-		# mysql.connection.commit()
-		# cur.close()
-		# return getUser
-		# return json.dumps(json_data)
-	# 	return render_template('registered.html',email = getUser)
-	# return "hahahah"		
-# @app.route('/logout',methods = ['GET','POST'])
-# def logout():
-# 	session.pop('email',None)
-# 	return render_template('login.html')
-
-# @app.route('/add', methods = ['GET','POST'])
-# def addDetails():
-# 	if request.method == 'POST':
-# 		details = request.form
-# 		name = details['name']
-# 		cur = mysql.connection.cursor()
-# 		cur.execute("INSERT INTO user(firstName) VALUES	%s",name)
-# 		mysql.connection.commit()
-# 		cur.close()
-# 		flash("Record Added")
-# 	return render_template('login.html')
-
-# @app.route('/delete', methods = ['GET','POST'])
-# def deleteDetails():
-# 	cur = mysql.connection.cursor()
-# 	cur.execute("DELETE FROM user WHERE firstName = 'gfgfgh'")
-# 	mysql.connection.commit()
-# 	cur.close()
-# 	return "Record Deleted"
+# 		# details = request.form
+# 		# fname = details['fname']
+# 		# lname = details['lname']
+# 		peter = user.query.filter_by(name = 'vivek malvi').all()		
+# 		db.session.commit()
+# 		return str(peter)
 
 @app.route('/signup', methods = ['POST'])
 def signup():
@@ -121,7 +74,7 @@ def login():
 			if pw_hash:
 				access_token = create_access_token(identity = name)
 				refresh_token = create_refresh_token(identity = name)
-				return jsonify({'message': 'logged in successfully','access_token': access_token})	
+				return jsonify({'message': 'logged in successfully','access_token': access_token,'refresh_token': refresh_token})	
 			else:
 				return jsonify({"message": "wrong password"})
 				abort(401)
@@ -170,7 +123,7 @@ def getUserById(uid):
 @app.route('/delete/<string:userName>', methods = ["POST"])
 @jwt_required
 def delete(userName):
-	if request.method == 'POST	':
+	if request.method == 'POST':
 		cur = mysql.connection.cursor()
 		cur.execute("DELETE FROM user WHERE name = %s",[userName])	
 		mysql.connection.commit()
@@ -187,8 +140,24 @@ def update(userId,data):
 		cur.close()
 	return jsonify({"message": "record updated"})
 
+@app.route('/getAllUsers',methods = ['GET'])
+@jwt_required
+def getAllUsers():
+	if request.method == 'GET':
+		cur = mysql.connection.cursor()
+		cur.execute("SELECT * FROM user")
+		row_headers=[x[0] for x in cur.description]
+		print(cur.description)
+		users = cur.fetchall();
+		mysql.connection.commit()
+		cur.close()
+		result = []
+		for user in users:
+			result.append(dict(zip(row_headers,user)))
+		return jsonify(result)
+		
 if __name__ =='__main__':  
-    app.run(debug = True)
+	app.run(debug = True)
 
 
 
