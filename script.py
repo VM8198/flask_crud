@@ -4,7 +4,7 @@ from flask_mysqldb import MySQL
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import *
-
+import os
 
 app = Flask(__name__) #creating the Flask class object 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:@localhost/flask'
@@ -15,6 +15,10 @@ bcrypt = Bcrypt(app)
 app.secret_key = "helloFlask"  
 app.config['JWT_SECRET_KEY'] = 'jwt-secret-string'
 jwt = JWTManager(app)
+UPLOAD_FOLDER = 'uploads'
+ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'])
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
 
 class user(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
@@ -123,7 +127,7 @@ def getUserById(uid):
 @app.route('/delete/<string:userName>', methods = ["POST"])
 @jwt_required
 def delete(userName):
-	if request.method == 'POST':
+	if request.method == 'POST	':
 		cur = mysql.connection.cursor()
 		cur.execute("DELETE FROM user WHERE name = %s",[userName])	
 		mysql.connection.commit()
@@ -141,7 +145,7 @@ def update(userId,data):
 	return jsonify({"message": "record updated"})
 
 @app.route('/getAllUsers',methods = ['GET'])
-@jwt_required
+# @jwt_required
 def getAllUsers():
 	if request.method == 'GET':
 		cur = mysql.connection.cursor()
@@ -155,6 +159,20 @@ def getAllUsers():
 		for user in users:
 			result.append(dict(zip(row_headers,user)))
 		return jsonify(result)
+
+@app.route('/upload-file', methods = ['POST'])
+def upload_file():
+    if request.method == 'POST':
+        if 'file' not in request.files:
+            flash('No file part')
+            return abort(404)
+        file = request.files['file']
+        if file.filename == '':
+            flash('No selected file')
+            return abort(401)
+        if file:
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], file.filename))
+            return "uploaded"
 		
 if __name__ =='__main__':  
 	app.run(debug = True)
